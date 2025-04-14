@@ -1,4 +1,6 @@
+from re import sub
 import gradio as gr
+from views.game_view import GameView
 
 class GradioController():
 
@@ -25,14 +27,17 @@ class GradioController():
 
     def main_page(self, role_state):
         with gr.Blocks() as main_page:
+
             @gr.render(inputs=role_state)
-            def main_page(role):
-                if role == "defuser":
-                    gr.Markdown("# Defuser")
-                elif role == "expert":
-                    gr.Markdown("# Expert")
-                else:
-                    gr.Markdown(f"# {role}")
+            def render_main_page(role):
+                
+                matched = False
+                for subclass in all_subclasses(GameView):
+                    if subclass.role == role:
+                        matched = True
+                        gr.Markdown(f"#{subclass.__class__.__name__}")
+                if not matched:
+                    gr.Markdown("# No match found")
                 
                 textbox = gr.Textbox("Enter role here")
                 button = gr.Button("Click me")
@@ -53,6 +58,10 @@ class GradioController():
                 self.info_page()
 
         return demo
+    
+def all_subclasses(cls) -> set[GameView]:
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)])
 
 if __name__ == "__main__":
     demo = GradioController().start_gradio()
